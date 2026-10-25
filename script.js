@@ -27,7 +27,16 @@ const SUPABASE_SDK_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.4
      leaderboard: { enabled: false, gameId: 'my-game', note: 'Why it is off' }   // optional
    }
    thumb.pattern: grid | stripes | dots | checker | waves | rays                                    */
-const GAME_CATALOG = [
+const GAME_CATALOG = [const GAME_CATALOG = [
+  {
+    id: 'Mad Skills Motocross 2',
+    title: 'Mad Skills Motocross 2',
+    description: 'Mad Skills Motocross 2',
+    category: 'arcade',
+    tags: ['levels', 'hard'],
+    file: 'games/Mad Skills Motocross 2.html'
+  },
+];
 ];
 
 const DEFAULT_CATEGORIES = [
