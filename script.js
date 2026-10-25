@@ -34,7 +34,7 @@ const GAME_CATALOG = [const GAME_CATALOG = [
     description: 'Mad Skills Motocross 2',
     category: 'arcade',
     tags: ['levels', 'hard'],
-    file: 'games/Mad Skills Motocross 2.html'
+    file: 'games/Mad Skills Motocross 2'
   },
 ];
 ];
