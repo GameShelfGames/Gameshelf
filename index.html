@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>GameShelf</title>
+  <meta name="description" content="GameShelf — a personal retro arcade shelf for browser games.">
+  <meta name="theme-color" content="#14101f">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <!-- Optional pixel font. If it fails to load, the monospace fallback in style.css is used. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <header class="site-header" id="top">
+    <a class="brand" href="#top" aria-label="Home">
+      <span class="brand-mark" aria-hidden="true">▶</span>
+      <span id="logoText" class="brand-text">GAMESHELF</span>
+    </a>
+    <nav id="mainNav" class="main-nav" aria-label="Main"></nav>
+    <div class="header-actions">
+      <button id="btnLb" class="btn btn-ghost" type="button" data-icon="trophy"><span class="btn-label">Scores</span></button>
+      <button id="btnAccount" class="btn btn-ghost" type="button" data-icon="user"><span id="accountLabel" class="btn-label">Account</span></button>
+      <button id="btnSettings" class="btn" type="button" data-icon="gear" aria-label="Open settings"></button>
+    </div>
+  </header>
+
+  <div id="statusBar" class="status-bar" role="region" aria-label="System status" hidden></div>
+
+  <main id="main" class="main">
+    <noscript><p class="empty">GameShelf needs JavaScript to list and launch games.</p></noscript>
+
+    <section class="section hero" data-section="hero" aria-labelledby="heroTitle">
+      <h1 id="heroTitle" class="hero-title"></h1>
+      <p id="heroTagline" class="hero-tagline"></p>
+      <p id="heroWelcome" class="hero-welcome"></p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#library" data-icon="play">Browse games</a>
+        <button id="btnRandom" class="btn" type="button">Play a random game</button>
+      </div>
+    </section>
+
+    <section class="section" data-section="featured" aria-labelledby="featH" hidden>
+      <div class="section-head"><h2 id="featH">Featured</h2></div>
+      <div id="featuredBox"></div>
+    </section>
+
+    <section class="section" data-section="favorites" aria-labelledby="favH" hidden>
+      <div class="section-head"><h2 id="favH">Favorites</h2></div>
+      <div id="favGrid" class="grid"></div>
+    </section>
+
+    <section class="section" data-section="recent" aria-labelledby="recH" hidden>
+      <div class="section-head"><h2 id="recH">Recently played</h2></div>
+      <div id="recentGrid" class="grid"></div>
+    </section>
+
+    <section class="section" data-section="popular" aria-labelledby="popH" hidden>
+      <div class="section-head"><h2 id="popH">Most played</h2><span class="muted">Counted on this device only</span></div>
+      <div id="popGrid" class="grid"></div>
+    </section>
+
+    <section class="section" data-section="leaderboard" id="leaderboard" aria-labelledby="lbH">
+      <div class="section-head">
+        <h2 id="lbH">Top 10</h2>
+        <div class="row">
+          <label class="inline"><span class="sr-only">Game</span><select id="lbPreviewSelect"></select></label>
+          <button id="lbPreviewRefresh" class="btn btn-ghost" type="button" data-icon="refresh"><span class="btn-label">Refresh</span></button>
+          <button id="lbPreviewFull" class="btn" type="button">Full leaderboard</button>
+        </div>
+      </div>
+      <div id="lbPreviewYou" class="lb-you" aria-live="polite"></div>
+      <div id="lbPreview" class="lb-box"></div>
+    </section>
+
+    <section class="section" data-section="library" id="library" aria-labelledby="libH">
+      <div class="section-head"><h2 id="libH">Game library</h2><span id="resultCount" class="muted" aria-live="polite"></span></div>
+      <div class="toolbar">
+        <label class="search">
+          <span class="sr-only">Search games by title, description, category or tag</span>
+          <input id="search" type="search" placeholder="Search games, tags, categories…  ( / )" autocomplete="off" list="searchHist" maxlength="80">
+        </label>
+        <datalist id="searchHist"></datalist>
+        <label class="inline">Sort <select id="sortSel"></select></label>
+      </div>
+      <div id="catChips" class="chips" role="group" aria-label="Filter by category"></div>
+      <div id="gameGrid" class="grid"></div>
+      <div id="libEmpty" class="empty" hidden></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p id="footerText"></p>
+    <p class="muted"><span id="versionText"></span> · <button id="footSettings" class="linklike" type="button">Settings</button></p>
+  </footer>
+
+  <!-- Settings -->
+  <dialog id="settingsDlg" class="dlg drawer" aria-labelledby="settingsTitle">
+    <div class="dlg-head">
+      <h2 id="settingsTitle">Settings</h2>
+      <button class="btn btn-ghost" type="button" data-close aria-label="Close settings" data-icon="x"></button>
+    </div>
+    <p class="hint pad">Changes apply instantly to the page behind this panel and are saved in this browser.</p>
+    <div id="settingsTabs" class="tabs" role="tablist" aria-label="Settings sections"></div>
+    <div id="settingsPanel" class="dlg-body" role="tabpanel" tabindex="0"></div>
+  </dialog>
+
+  <!-- Account -->
+  <dialog id="accountDlg" class="dlg drawer" aria-labelledby="accountTitle">
+    <div class="dlg-head">
+      <h2 id="accountTitle">Player account</h2>
+      <button class="btn btn-ghost" type="button" data-close aria-label="Close account" data-icon="x"></button>
+    </div>
+    <div id="accountBody" class="dlg-body"></div>
+  </dialog>
+
+  <!-- Full leaderboard -->
+  <dialog id="lbDlg" class="dlg drawer wide" aria-labelledby="lbDlgTitle">
+    <div class="dlg-head">
+      <h2 id="lbDlgTitle">Leaderboards</h2>
+      <button class="btn btn-ghost" type="button" data-close aria-label="Close leaderboards" data-icon="x"></button>
+    </div>
+    <div class="dlg-body">
+      <div class="row">
+        <label class="inline">Game <select id="lbSelect"></select></label>
+        <button id="lbRefresh" class="btn" type="button" data-icon="refresh"><span class="btn-label">Refresh</span></button>
+      </div>
+      <div id="lbYou" class="lb-you" aria-live="polite"></div>
+      <div id="lbFull" class="lb-box"></div>
+      <h3>Your personal bests</h3>
+      <div id="lbBests"></div>
+    </div>
+  </dialog>
+
+  <!-- In-page game player -->
+  <div id="player" class="player" role="dialog" aria-modal="true" aria-labelledby="playerTitle" hidden>
+    <div class="player-bar">
+      <button id="pBack" class="btn" type="button" data-icon="back">Back to GameShelf</button>
+      <h2 id="playerTitle" class="player-title"></h2>
+      <div class="player-tools">
+        <button id="pFav" class="btn btn-ghost" type="button" aria-pressed="false" data-icon="star"><span class="sr-only">Favorite</span></button>
+        <button id="pLb" class="btn btn-ghost" type="button" data-icon="trophy" hidden><span class="btn-label">Scores</span></button>
+        <a id="pOpen" class="btn btn-ghost" target="_blank" rel="noopener">Open directly</a>
+        <button id="pFs" class="btn btn-ghost" type="button" data-icon="expand"><span class="btn-label">Fullscreen</span></button>
+      </div>
+    </div>
+    <div id="pStage" class="player-stage">
+      <div id="pLoading" class="player-msg">Loading game…</div>
+      <div id="pError" class="player-msg error" role="alert" hidden></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="supabase-config.js" defer></script>
+  <script src="script.js" defer></script>
+</body>
+</html>
