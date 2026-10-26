@@ -28,6 +28,10 @@ const SUPABASE_SDK_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.4
    }
    thumb.pattern: grid | stripes | dots | checker | waves | rays                                    */
 const GAME_CATALOG = [
+  { id: 'heist-run', title: 'Heist Run', description: '3D endless runner: dodge police barricades, laser beams and armored vans while grabbing loot.',
+    category: 'arcade', tags: ['endless', '3d', 'runner', 'heist'], file: 'games/heist-run.html', featured: true,
+    thumb: { colors: ['#e0a526', '#14161d'], symbol: '💰', pattern: 'stripes' },
+    leaderboard: { enabled: true, gameId: 'heist-run' } },
   { id: '1v1-lol', title: '1v1.LOL', description: 'Unavailable for now: this file embeds an image link instead of a game. Replace the link inside games/1v1_lol.html to enable it.',
     category: 'action', tags: ['shooter', 'multiplayer'], file: 'games/1v1_lol.html', status: 'unavailable', thumb: { symbol: '🎯', image: 'https://trafficrally.io/data/image/how-to-play-1v1.lol.png' } },
   { id: 'awesome-tanks-2', title: 'Awesome Tanks 2', description: 'Upgrade your tank and fight through battle stages.',
