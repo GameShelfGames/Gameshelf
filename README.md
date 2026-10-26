@@ -4,7 +4,7 @@ A retro-arcade portal for your own browser games. Static site (HTML, CSS, vanill
 
 ## Status — read this first
 
-- **17 games are registered** (see "Included games" below). Titles and one-line descriptions are written from each file's own page title, iframe title and address; check them and edit freely.
+- **18 games are registered**: Heist Run (your own game, featured, with the online leaderboard hook) plus 17 wrapper games (see "Included games" below). Titles and one-line descriptions are written from each file's own page title, iframe title and address; check them and edit freely.
 - **Leaderboards are off for every game** until you connect a game to the score hook (see [Leaderboards](#leaderboards)) and add Supabase credentials.
 - The code has **not been run in a browser or against a live Supabase project**. JavaScript files passed a syntax check (`node --check`) and `manifest.json` parses as JSON. The Edge Function and SQL are untested. Test them with the checklist at the end.
 
