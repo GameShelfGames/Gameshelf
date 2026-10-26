@@ -1,0 +1,58 @@
+<html><head><base href="https://36017036-atari-embeds.googleusercontent.com/embeds/0859b55943a2669bb80e1e1b89207842/inner-frame-minified.html?jsh=m%3B%2F_%2Fscs%2Fabc-static%2F_%2Fjs%2Fk%3Dgapi.lb.en.gh7qIZtzO5w.O%2Fd%3D1%2Frs%3DAHpOoo84YKT1RVy0T6hcXi5rH3LooB1WCw%2Fm%3D__features__" target="_blank">
+      <script>
+        (function() {
+          // Listen during capturing phase to intercept before <base target="_blank"> takes effect.
+          document.addEventListener('click', function(e) {
+            // Find the nearest ancestor anchor (handles nested icons, spans, svgs).
+            var el = e.target;
+            var anchor = null;
+            while (el && el !== document) {
+              if (el.tagName && el.tagName.toLowerCase() === 'a') {
+                anchor = el;
+                break;
+              }
+              el = el.parentElement;
+            }
+            if (!anchor) return;
+
+            // Only intercept relative in-page fragment links, not external links with hashes.
+            var href = anchor.getAttribute('href');
+            if (!href) return;
+            href = href.trim();
+            if (!href.startsWith('#')) return;
+
+            // Prevent default <base target="_blank"> navigation to a new blank tab.
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Handle empty anchor or top anchor.
+            if (href === '#' || href === '#top') {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              return;
+            }
+
+            // Resolve target element by id, falling back to legacy name attribute.
+            var targetId = href.slice(1);
+            try {
+              targetId = decodeURIComponent(targetId);
+            } catch (err) {}
+
+            var targetEl = document.getElementById(targetId);
+            if (!targetEl) {
+              try {
+                var escaped = window.CSS && CSS.escape ? CSS.escape(targetId) : targetId.replace(/["\\]/g, '\\$&');
+                targetEl = document.querySelector('[name="' + escaped + '"]');
+              } catch (err) {}
+            }
+
+            // Smoothly scroll to the target within the embed and update URL hash history.
+            if (targetEl) {
+              targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              if (window.history && window.history.pushState) {
+                window.history.pushState(null, '', href);
+              }
+            }
+          }, true); // useCapture: true is critical to preempt <base target="_blank">
+        })();
+      </script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&amp;display=swap" rel="stylesheet"><style> :root { --primary-color: #6842ff; --secondary-color: #9c85ff; --bg-light: #eef2ff; --font-main: "Space Grotesk", sans-serif; } body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: var(--bg-light); font-family: var(--font-main); } #game-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; } iframe { width: 100%; height: 100%; border: none; } #game-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.5s ease, visibility 0.5s ease; } .button-group { display: flex; flex-direction: column; align-items: stretch; gap: 20px; text-align: center; width: min(32rem, calc(100vw - 2rem)); max-width: 100%; box-sizing: border-box; } .button-group > .btn-border-beam { min-height: 4.25rem; } .btn { font-family: var(--font-main); padding: 20px 50px; font-size: 1.25rem; font-weight: 700; text-transform: uppercase; border: none; border-radius: 16px; cursor: pointer; text-decoration: none; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s ease, background-color 0.2s ease; display: inline-block; box-sizing: border-box; box-shadow: 0 8px 25px rgba(104, 66, 255, 0.15); } .btn:active { transform: scale(0.96); } .btn-border-beam { position: relative; display: flex; width: 100%; padding: 2px; border-radius: 18px; overflow: hidden; isolation: isolate; box-sizing: border-box; } .btn-border-beam::before { content: ""; position: absolute; top: 50%; left: 50%; width: 350%; height: 350%; z-index: 0; background: conic-gradient( from 0deg, transparent 0deg, transparent 240deg, rgba(255, 255, 255, 0.95) 270deg, var(--secondary-color) 300deg, var(--primary-color) 320deg, transparent 360deg ); animation: border-beam-spin 2.8s linear infinite; transform: translate(-50%, -50%) rotate(0deg); } @keyframes border-beam-spin { to { transform: translate(-50%, -50%) rotate(360deg); } } .btn-play { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; flex: 1 1 auto; width: 100%; min-width: 0; background-color: var(--primary-color); color: white; } .btn-play:hover, .btn-border-beam:hover .btn-play { background-color: #5533dd; box-shadow: 0 12px 30px rgba(104, 66, 255, 0.35); } .btn-trending { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; flex: 1 1 auto; width: 100%; min-width: 0; background-color: white; color: var(--primary-color); border: none; padding: 20px 50px; } .btn-trending:hover, .btn-border-beam:hover .btn-trending { background-color: var(--bg-light); box-shadow: 0 12px 30px rgba(104, 66, 255, 0.1); } .hidden { opacity: 0; visibility: hidden; pointer-events: none; }</style></head><body> <div id="game-container"> <iframe src="https://jasongamesdev.github.io/drift-hunters/" title="Drift Hunters"></iframe> </div> <div id="game-overlay"> <div class="button-group"> <div class="btn-border-beam"> <button id="play-btn" class="btn btn-play" type="button">PLAY GAME</button> </div> <div class="btn-border-beam"> <a href="https://classroom15x.online/" rel="noopener noreferrer" target="_blank" class="btn btn-trending"> PLAY NEW TRENDING GAMES </a> </div> </div> </div> <script> document.addEventListener("DOMContentLoaded", () => { const overlay = document.getElementById("game-overlay"); const playBtn = document.getElementById("play-btn"); playBtn.addEventListener("click", () => { overlay.classList.add("hidden"); const gameIframe = document.querySelector("iframe"); if (gameIframe) gameIframe.focus(); }); }); </script></body></html>
