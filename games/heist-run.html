@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Heist Run – 3D Endless Runner</title>
+<style>
+:root{--bg:#14161d;--card:#1d2029;--ink:#f1ece0;--mute:#9a9484;--accent:#e0a526;--line:#2c303c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:16px;display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.game{flex:1 1 580px;min-width:0}
+.side{flex:1 1 250px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+h1{font-size:24px;margin:0 0 8px}
+h2{font-size:17px;margin:0 0 8px}
+.hud{display:flex;justify-content:space-between;color:var(--mute);font-size:14px;margin:0 2px 8px}
+.hud b{color:var(--ink)}
+.stage{position:relative;aspect-ratio:16/9;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#0b1020;touch-action:none}
+.stage canvas{display:block;width:100%;height:100%}
+#ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:12px;background:rgba(5,8,18,.62);color:#f4efe2}
+#ov.hide{display:none}
+#ov h2{font-size:30px;margin:0;letter-spacing:1px}
+#ov p{margin:0;font-size:14px}
+input{font:inherit;padding:8px 10px;border-radius:8px;border:2px solid var(--line);background:#f4efe2;color:#14161d;width:210px;text-align:center}
+button{font:inherit;cursor:pointer;padding:9px 18px;border-radius:8px;border:0;background:var(--accent);color:#1a1405;font-weight:700}
+button.alt{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+button:disabled{opacity:.45;cursor:default}
+.ctrls{display:flex;gap:8px;margin-top:10px}
+.ctrls button{flex:1;padding:14px 0;user-select:none;-webkit-user-select:none;touch-action:none}
+.hint{font-size:12px;color:var(--mute);margin:8px 2px 0}
+#list{max-height:430px;overflow-y:auto;margin:0;padding:0;list-style:none}
+#list li{display:flex;gap:8px;padding:6px 8px;border-radius:8px;font-size:14px}
+#list li:nth-child(odd){background:rgba(255,255,255,.04)}
+#list li.me{outline:2px solid var(--accent)}
+.rk{width:30px;color:var(--mute);text-align:right}
+.nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc{font-weight:700;color:var(--accent)}
+#lbs{font-size:13px;color:var(--mute);margin:8px 0 0}
+#more{width:100%;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="game">
+    <h1>💰 Heist Run</h1>
+    <div class="hud"><span>Score <b id="sc">0</b></span><span>Loot <b id="ca">0</b></span><span>Your best <b id="bs">0</b></span></div>
+    <div class="stage" id="stage">
+      <div id="ov">
+        <h2 id="ovT">HEIST RUN</h2>
+        <p id="ovP">Grab the loot, dodge the cops. Enter a name to start.</p>
+        <input id="nm" maxlength="16" placeholder="Your name (required)" autocomplete="off">
+        <button id="go" disabled>Start heist</button>
+        <p id="msg"></p>
+      </div>
+    </div>
+    <div class="ctrls"><button class="alt" id="bL">← Left</button><button class="alt" id="bJ">↑ Jump</button><button class="alt" id="bD">↓ Duck</button><button class="alt" id="bR">Right →</button></div>
+    <p class="hint">← → switch lanes · ↑ / Space jump police barricades · ↓ duck under laser beams · armored vans are too tall, so dodge them. Grab the gold. On touch: swipe.</p>
+  </div>
+  <div class="side">
+    <h2>🏆 Most Wanted</h2>
+    <ol id="list"></ol>
+    <button class="alt" id="more" style="display:none">Show more</button>
+    <p id="lbs">Loading…</p>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="../supabase-config.js"></script>
+<script src="../gameshelf-score.js"></script>
+<script>
+/* ===== SETUP: paste your Firebase Realtime Database URL to make the leaderboard public & shared.
+   Example: "https://my-heist-game-default-rtdb.firebaseio.com"  (leave "" for a local-only demo board) ===== */
+const FIREBASE_DB_URL = "";
+
+const DB=(FIREBASE_DB_URL||'').replace(/\/+$/,'');
+const $=id=>document.getElementById(id);
+const stage=$('stage');
+const LANES=[-2.4,0,2.4];
+let state='ready',score=0,cash=0,best=0,speed=18,dist=0,time=0,spawnDist=30,last=0;
+let lane=1,px=0,py=0,vy=0,duckHeld=false,duckT=0,crouch=false;
+let renderer,scene,camera,siren,player,legL,legR,armL,armR;
+let obs=[],coins=[],dashes=[],builds=[];
+try{best=parseInt(localStorage.getItem('hr_best'))||0;$('nm').value=localStorage.getItem('hr_name')||'';}catch(e){}
+$('bs').textContent=best;
+const cleanName=()=>$('nm').value.replace(/\s+/g,' ').trim().slice(0,16);
+const nameOk=()=>cleanName().length>0;
+const hasGL=typeof THREE!=='undefined';
+function syncGo(){$('go').disabled=!nameOk()||!hasGL;}
+$('nm').addEventListener('input',syncGo);syncGo();
+
+/* ---------- 3D scene ---------- */
+const lam=(c,e)=>new THREE.MeshLambertMaterial({color:c,emissive:e||0x000000});
+const bas=c=>new THREE.MeshBasicMaterial({color:c});
+function box(w,h,d,mat,x,y,z,par){const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);b.position.set(x,y,z);if(par)par.add(b);return b;}
+
+function makeRobber(){
+  const g=new THREE.Group(),dark=lam(0x15151c);
+  legL=new THREE.Group();legR=new THREE.Group();legL.position.set(-.18,.9,0);legR.position.set(.18,.9,0);g.add(legL,legR);
+  box(.28,.9,.3,dark,0,-.45,0,legL);box(.28,.9,.3,dark,0,-.45,0,legR);
+  box(.8,.9,.45,lam(0xeeeeee),0,1.35,0,g);
+  for(let i=0;i<3;i++)box(.82,.15,.47,lam(0x111111),0,1.1+i*.3,0,g);
+  armL=new THREE.Group();armR=new THREE.Group();armL.position.set(-.52,1.72,0);armR.position.set(.52,1.72,0);g.add(armL,armR);
+  box(.22,.8,.25,dark,0,-.4,0,armL);box(.22,.8,.25,dark,0,-.4,0,armR);
+  box(.5,.5,.5,lam(0xf0c9a0),0,2.05,0,g);
+  box(.52,.16,.52,lam(0x050505),0,2.08,0,g);
+  box(.54,.22,.54,lam(0x2b2b33),0,2.36,0,g);
+  box(.72,.72,.4,lam(0x6b8e3a),0,1.42,.42,g);
+  box(.2,.34,.03,lam(0xffe066,0x554400),0,1.42,.63,g);
+  return g;
+}
+function makeObstacle(kind){
+  const g=new THREE.Group();
+  if(kind==='barrier'){
+    box(.12,1,.12,lam(0x333333),-.8,.5,0,g);box(.12,1,.12,lam(0x333333),.8,.5,0,g);
+    box(2,.32,.3,lam(0xd23a3a),0,.84,0,g);box(2,.28,.3,lam(0xf2f2f2),0,.4,0,g);
+    return {g,hw:1,d:.6,y0:0,y1:.95};
+  }
+  if(kind==='laser'){
+    box(.14,2.3,.14,lam(0x222228),-1.1,1.15,0,g);box(.14,2.3,.14,lam(0x222228),1.1,1.15,0,g);
+    box(2.2,.1,.1,bas(0xff2a2a),0,1.65,0,g);box(2.2,.04,.04,bas(0xff8a8a),0,1.8,0,g);
+    return {g,hw:1.05,d:.4,y0:1.5,y1:1.8};
+  }
+  box(2,2.6,4,lam(0x5a6572),0,1.3,0,g);box(2,.5,4,lam(0x2f353d),0,2.85,0,g);
+  box(1.8,.9,.06,lam(0x0d1218),0,2,2.02,g);
+  box(.5,.2,.5,bas(0xff2a2a),-.5,3.2,0,g);box(.5,.2,.5,bas(0x2a6bff),.5,3.2,0,g);
+  return {g,hw:1,d:4,y0:0,y1:3.4};
+}
+function init3D(){
+  renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  stage.insertBefore(renderer.domElement,stage.firstChild);
+  scene=new THREE.Scene();scene.background=new THREE.Color(0x0b1020);scene.fog=new THREE.Fog(0x0b1020,28,100);
+  camera=new THREE.PerspectiveCamera(62,16/9,.1,200);
+  scene.add(new THREE.HemisphereLight(0x9fb4ff,0x2a2a3a,1));
+  const sun=new THREE.DirectionalLight(0xffffff,.55);sun.position.set(-4,10,6);scene.add(sun);
+  siren=new THREE.PointLight(0xff2222,1.8,45);siren.position.set(0,3.5,9);scene.add(siren);
+  const road=new THREE.Mesh(new THREE.PlaneGeometry(7.4,300),lam(0x2b3039));road.rotation.x=-Math.PI/2;road.position.z=-100;scene.add(road);
+  for(const s of [-1,1]){const w=new THREE.Mesh(new THREE.PlaneGeometry(3,300),lam(0x4a4f5a));w.rotation.x=-Math.PI/2;w.position.set(s*5.2,.02,-100);scene.add(w);}
+  for(const x of [-1.2,1.2])for(let i=0;i<16;i++){const d=box(.12,.02,3,bas(0xe8d27a),x,.03,10-i*8);scene.add(d);dashes.push(d);}
+  const pal=[0x1a2238,0x232b45,0x2b2340,0x1c2f3d];
+  for(const s of [-1,1])for(let i=0;i<14;i++){
+    const b=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),lam(pal[(i+(s>0?2:0))%4],0x0a0f1e));b.userData.s=s;
+    setBuilding(b,10-i*9);scene.add(b);builds.push(b);
+  }
+  player=makeRobber();scene.add(player);
+  onResize();
+}
+function setBuilding(b,z){
+  const w=4+Math.random()*3,h=8+Math.random()*18;
+  b.scale.set(w,h,8);b.position.set(b.userData.s*(7+w/2),h/2,z);
+}
+function onResize(){
+  if(!renderer)return;
+  const w=stage.clientWidth||640,h=stage.clientHeight||360;
+  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+addEventListener('resize',onResize);
+if(window.ResizeObserver)new ResizeObserver(onResize).observe(stage);
+
+/* ---------- game logic ---------- */
+function clearWorld(){for(const o of obs)scene.remove(o.m);for(const c of coins)scene.remove(c.m);obs=[];coins=[];}
+function addObs(kind,l,z){
+  const o=makeObstacle(kind);o.m=o.g;o.x=LANES[l];o.z=z;o.m.position.set(o.x,0,z);scene.add(o.m);obs.push(o);
+}
+function addCoin(l,z){
+  const m=new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,.1,18),lam(0xffc83d,0x664400));
+  m.rotation.x=Math.PI/2;m.position.set(LANES[l],.95,z);scene.add(m);coins.push({m,x:LANES[l],z});
+}
+function spawnRow(sp){
+  const safe=Math.floor(Math.random()*3);
+  for(let l=0;l<3;l++){
+    const r=Math.random();let k=null;
+    if(l===safe)k=r<.5?null:(r<.75?'barrier':'laser');
+    else k=r<.4?'van':r<.65?'barrier':r<.8?'laser':null;
+    if(k)addObs(k==='van'?'van':k,l,-100);
+  }
+  if(Math.random()<.75){const cl=Math.floor(Math.random()*3);for(let i=0;i<4;i++)addCoin(cl,-100+sp*.3+i*2.2);}
+}
+function start(){
+  if(!hasGL)return;
+  if(!nameOk()){$('nm').focus();return;}
+  try{localStorage.setItem('hr_name',cleanName());}catch(e){}
+  clearWorld();scene.background.setHex(0x0b1020);
+  state='playing';score=0;cash=0;dist=0;time=0;speed=18;spawnDist=30;lane=1;px=0;py=0;vy=0;duckHeld=false;duckT=0;
+  $('ov').classList.add('hide');$('sc').textContent=0;$('ca').textContent=0;$('msg').textContent='';
+}
+function jump(){
+  if(state!=='playing'){if(document.activeElement!==$('nm'))start();return;}
+  if(py<=0&&vy<=0)vy=12;
+}
+function move(d){if(state==='playing')lane=Math.max(0,Math.min(2,lane+d));}
+function duck(){if(state==='playing'){duckT=.7;}}
+async function over(){
+  state='busted';const s=score;scene.background.setHex(0x3a0a0a);
+  if(s>0&&window.GameShelfScore)GameShelfScore.submit('heist-run',s);   // GameShelf online leaderboard (Supabase)
+  if(s>best){best=s;$('bs').textContent=best;try{localStorage.setItem('hr_best',best);}catch(e){}}
+  $('ovT').textContent='BUSTED — '+s;
+  $('ovP').textContent='Change your name if you like, then go again';
+  $('go').textContent='Another heist';state='over';syncGo();
+  $('ov').classList.remove('hide');
+  if(s>0){
+    $('msg').textContent='Checking the leaderboard…';
+    try{
+      const r=await postBest(cleanName(),s);
+      $('msg').textContent=r.posted?'New best posted to the leaderboard!':'Your leaderboard best is '+r.kept+'.';
+      loadLB();
+    }catch(e){$('msg').textContent='Couldn’t reach the leaderboard — check your connection.';}
+  }
+}
+function update(dt){
+  time+=dt;speed=Math.min(38,18+time*.35);const mv=speed*dt;dist+=mv;
+  px+=(LANES[lane]-px)*Math.min(1,dt*14);
+  if(py>0||vy>0){vy-=(duckHeld?70:32)*dt;py+=vy*dt;if(py<=0){py=0;vy=0;}}
+  duckT=Math.max(0,duckT-dt);
+  crouch=(duckHeld||duckT>0)&&py===0;
+  const ph=crouch?1.3:2.4;
+  const sp=Math.max(20,speed*1.15);
+  spawnDist-=mv;if(spawnDist<=0){spawnRow(sp);spawnDist+=sp;}
+  for(const o of obs){
+    o.z+=mv;o.m.position.z=o.z;
+    if(Math.abs(o.z)<o.d/2+.4&&Math.abs(o.x-px)<o.hw+.3&&py<o.y1&&py+ph>o.y0){over();return;}
+  }
+  for(let i=coins.length-1;i>=0;i--){
+    const c=coins[i];c.z+=mv;c.m.position.z=c.z;c.m.rotation.z+=dt*5;
+    if(Math.abs(c.z)<.9&&Math.abs(c.x-px)<1&&py<1.3&&py+ph>.6){scene.remove(c.m);coins.splice(i,1);cash+=10;$('ca').textContent=cash;}
+    else if(c.z>8){scene.remove(c.m);coins.splice(i,1);}
+  }
+  for(let i=obs.length-1;i>=0;i--)if(obs[i].z>10){scene.remove(obs[i].m);obs.splice(i,1);}
+  for(const d of dashes){d.position.z+=mv;if(d.position.z>10)d.position.z-=128;}
+  for(const b of builds){b.position.z+=mv;if(b.position.z>16)setBuilding(b,b.position.z-126);}
+  score=Math.floor(dist/2)+cash;$('sc').textContent=score;
+}
+function pose(){
+  player.position.set(px,py,0);player.scale.y=crouch?.55:1;
+  const a=py>0?.5:Math.sin(time*speed*.45)*.9;
+  legL.rotation.x=a;legR.rotation.x=-a;armL.rotation.x=-a;armR.rotation.x=a;
+  camera.position.set(px*.5,4.6,7.5);camera.lookAt(px*.3,1.3,-9);
+}
+function loop(ts){
+  if(!last)last=ts;const dt=Math.min((ts-last)/1000,.05);last=ts;
+  if(state==='playing')update(dt);
+  siren.color.setHex(Math.floor(ts/250)%2?0xff2222:0x2255ff);
+  pose();renderer.render(scene,camera);requestAnimationFrame(loop);
+}
+if(hasGL){init3D();requestAnimationFrame(loop);}
+else{$('ovP').textContent='Couldn’t load the 3D engine — check your connection and reload.';}
+
+/* ---------- input ---------- */
+addEventListener('keydown',e=>{
+  if(e.target&&e.target.tagName==='INPUT'){if(e.key==='Enter'&&nameOk()&&state!=='playing'){e.preventDefault();$('nm').blur();start();}return;}
+  if(e.code==='ArrowLeft'||e.code==='KeyA'){e.preventDefault();move(-1);}
+  else if(e.code==='ArrowRight'||e.code==='KeyD'){e.preventDefault();move(1);}
+  else if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault();jump();}
+  else if(['ArrowDown','KeyS'].includes(e.code)){e.preventDefault();duckHeld=true;}
+});
+addEventListener('keyup',e=>{if(['ArrowDown','KeyS'].includes(e.code))duckHeld=false;});
+let sx=0,sy=0;
+stage.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY;});
+stage.addEventListener('pointerup',e=>{
+  if(state!=='playing')return;
+  const dx=e.clientX-sx,dy=e.clientY-sy;
+  if(Math.abs(dx)<24&&Math.abs(dy)<24)jump();
+  else if(Math.abs(dx)>Math.abs(dy))move(dx>0?1:-1);
+  else if(dy<0)jump();else duck();
+});
+$('bL').addEventListener('pointerdown',e=>{e.preventDefault();move(-1);});
+$('bR').addEventListener('pointerdown',e=>{e.preventDefault();move(1);});
+$('bJ').addEventListener('pointerdown',e=>{e.preventDefault();jump();});
+$('bD').addEventListener('pointerdown',e=>{e.preventDefault();duck();});
+$('go').addEventListener('click',start);
+
+/* ---------- leaderboard: one entry per player name, best score only ---------- */
+let limit=50;
+const keyOf=n=>Array.from(new TextEncoder().encode(n.toLowerCase())).map(b=>b.toString(16).padStart(2,'0')).join('');
+function localObj(){try{return JSON.parse(localStorage.getItem('hr_scores')||'{}');}catch(e){return {};}}
+async function fetchScores(n){
+  if(!DB)return Object.entries(localObj()).map(([id,v])=>({id,name:v.name,score:v.score})).sort((a,b)=>b.score-a.score).slice(0,n);
+  const r=await fetch(DB+'/scores.json?orderBy=%22score%22&limitToLast='+n);
+  if(!r.ok)throw new Error('http');
+  const o=(await r.json())||{};
+  return Object.entries(o).map(([id,v])=>({id,name:v.name,score:v.score})).sort((a,b)=>b.score-a.score);
+}
+async function postBest(name,s){
+  const k=keyOf(name);
+  if(!DB){const o=localObj();if(o[k]&&o[k].score>=s)return {kept:o[k].score};o[k]={name,score:s};localStorage.setItem('hr_scores',JSON.stringify(o));return {posted:true};}
+  const url=DB+'/scores/'+k+'.json';
+  const g=await fetch(url);if(!g.ok)throw new Error('http');
+  const cur=await g.json();
+  if(cur&&Number(cur.score)>=s)return {kept:Number(cur.score)};
+  const r=await fetch(url,{method:'PUT',body:JSON.stringify({name:name,score:s,at:Date.now()})});
+  if(!r.ok)throw new Error('http');
+  return {posted:true};
+}
+async function loadLB(){
+  try{
+    const rows=await fetchScores(limit);
+    const ol=$('list');ol.textContent='';
+    const me=nameOk()?keyOf(cleanName()):'';
+    rows.forEach((v,i)=>{
+      const li=document.createElement('li');if(v.id===me)li.className='me';
+      const a=document.createElement('span');a.className='rk';a.textContent=i+1;
+      const b=document.createElement('span');b.className='nm';b.textContent=String(v.name||'Anonymous').slice(0,16);
+      const c=document.createElement('span');c.className='sc';c.textContent=Number(v.score)||0;
+      li.append(a,b,c);ol.appendChild(li);
+    });
+    $('more').style.display=rows.length>=limit?'block':'none';
+    $('lbs').textContent=(rows.length?rows.length+' player'+(rows.length===1?'':'s')+' · best scores only':'No scores yet — be the first!')+(DB?'':' · demo board (this device only)');
+  }catch(e){$('lbs').textContent='Couldn’t load the leaderboard.';}
+}
+$('more').addEventListener('click',()=>{limit+=50;loadLB();});
+loadLB();
+setInterval(()=>{if(!document.hidden&&state!=='playing')loadLB();},20000);
+</script>
+</body>
+</html>
