@@ -101,3 +101,7 @@ grant  select on public.profiles, public.games, public.scores, public.leaderboar
 -- Example (edit and run when you connect a game):
 -- insert into public.games (id, title, min_score, max_score) values ('my-game', 'My Game', 0, 1000000)
 --   on conflict (id) do update set title = excluded.title, max_score = excluded.max_score;
+
+-- Heist Run (already registered for you). max_score is a generous cap: top speed earns about 19 points per second plus 10 per coin.
+insert into public.games (id, title, min_score, max_score) values ('heist-run', 'Heist Run', 0, 250000)
+  on conflict (id) do update set title = excluded.title, max_score = excluded.max_score;
