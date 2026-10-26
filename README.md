@@ -144,6 +144,14 @@ The status bar (battery, online, time, date, fullscreen) is on by default and co
 
 `manifest.json` plus `sw.js` let browsers install GameShelf and open its homepage offline. The service worker caches only the site shell and never games, account data or Supabase requests. Games work offline only if they need nothing beyond their own file, and they are not cached by this worker.
 
+## If your changes do not show up
+
+1. Look at the footer of the live page: it shows the version (for example `v1.1.0`). If it is older than the one in `script.js`, the site is still serving old files.
+2. In the repo on github.com, check that `index.html` is at the top level (not inside another folder) and that the games are in `games/`.
+3. Check **Settings → Pages** shows your branch and `/ (root)`, and the **Actions** tab shows a finished "pages build and deployment" run for your latest commit.
+4. Open `https://YOUR-USERNAME.github.io/REPO-NAME/script.js` directly and search it (Ctrl+F) for something you just added. If it is there, the problem is your browser cache.
+5. Clear the browser cache: open DevTools (F12) → **Application** → **Service Workers** → **Unregister**, then **Storage → Clear site data**, then reload. Or test in a private window.
+
 ## Known limitations
 
 - Not tested in a browser or against a live Supabase project by the author of this code; run the checklist below.
