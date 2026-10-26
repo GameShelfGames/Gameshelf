@@ -6,7 +6,7 @@
 
 /* ═════════════ 1. CONFIG — edit this section ═════════════ */
 
-const SITE_VERSION = '1.0.0';
+const SITE_VERSION = '1.1.0';
 const SUPABASE_SDK_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
 
 /* THE GAME CATALOG
