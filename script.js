@@ -6,7 +6,7 @@
 
 /* ═════════════ 1. CONFIG — edit this section ═════════════ */
 
-const SITE_VERSION = '1.1.0';
+const SITE_VERSION = '1.2.0';
 const SUPABASE_SDK_URL = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
 
 /* THE GAME CATALOG
@@ -34,6 +34,9 @@ const GAME_CATALOG = [
     leaderboard: { enabled: true, gameId: 'heist-run' } },
   { id: '1v1-lol', title: '1v1.LOL', description: 'Unavailable for now: this file embeds an image link instead of a game. Replace the link inside games/1v1_lol.html to enable it.',
     category: 'action', tags: ['shooter', 'multiplayer'], file: 'games/1v1_lol.html', status: 'unavailable', thumb: { symbol: '🎯', image: 'https://trafficrally.io/data/image/how-to-play-1v1.lol.png' } },
+  { id: 'chess', title: 'Chess', description: 'Play against the computer, a friend on the same screen, or an online opponent.',
+    category: 'classic', tags: ['board game', 'strategy', 'online'], file: 'games/chess.html',
+    thumb: { colors: ['#5d8584', '#0f2a30'], symbol: '♟', pattern: 'checker' } },
   { id: 'awesome-tanks-2', title: 'Awesome Tanks 2', description: 'Upgrade your tank and fight through battle stages.',
     category: 'action', tags: ['tank', 'shooter'], file: 'games/Awesome_Tanks_2.html', thumb: { symbol: '🛡️' } },
   { id: 'doom', title: 'Doom', description: 'The classic first-person shooter, running in the browser through a DOS emulator.',
